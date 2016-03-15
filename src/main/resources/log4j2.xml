@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="INFO">
+    <properties>
+        <property name="APP_HOME">$${env:APP_HOME}</property>
+        <property name="LOG_HOME">${APP_HOME}/logs</property>
+        <property name="mainFilename">${LOG_HOME}/app.log</property>
+        <property name="filename">${LOG_HOME}/$${ctx:catalogs}/catalog.log</property>
+    </properties>
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT" follow="true">
+            <PatternLayout pattern="%date{yyyy-MM-dd HH:mm:ss.SSS} %level - %msg%n" />
+        </Console>
+        <Routing name="Routing">
+            <Routes pattern="$${ctx:catalogs}">
+                <Route key="$${ctx:catalogs}">
+                    <RollingFile name="Rolling-main" fileName="${mainFilename}"
+                                 filePattern="${LOG_HOME}/app.%i.log.gz">
+                        <PatternLayout>
+                            <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} %level - %msg%n</pattern>
+                        </PatternLayout>
+                        <SizeBasedTriggeringPolicy size="500 KB" />
+                    </RollingFile>
+                </Route>
+                <Route>
+                    <RollingFile name="Rolling-${ctx:catalogs}" fileName="${filename}"
+                                 filePattern="${LOG_HOME}/${ctx:catalogs}/app.%i.log.gz">
+                        <PatternLayout>
+                            <pattern>%date{yyyy-MM-dd HH:mm:ss.SSS} %level - %msg%n</pattern>
+                        </PatternLayout>
+                        <SizeBasedTriggeringPolicy size="500 KB" />
+                    </RollingFile>
+                </Route>
+            </Routes>
+        </Routing>
+    </Appenders>
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="Console" />
+            <AppenderRef ref="Routing" />
+        </Root>
+    </Loggers>
+</Configuration>

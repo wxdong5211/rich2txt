@@ -1,0 +1,50 @@
+apply plugin : 'maven-publish'
+
+def auther = 'auther'
+
+task sourceJar(type: Jar){
+    classifier 'sources'
+    from sourceSets.main.allJava
+    if (plugins.hasPlugin('scala')){
+        from sourceSets.main.allScala
+    }
+}
+
+if (plugins.hasPlugin('scala')){
+    task javadocJar(type: Jar, dependsOn: scaladoc){
+        classifier 'javadoc'
+        from scaladoc.destinationDir
+    }
+}else{
+    task javadocJar(type: Jar, dependsOn: javadoc){
+        classifier 'javadoc'
+        from javadoc.destinationDir
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from plugins.hasPlugin('war') ? components.web : components.java
+            artifact sourceJar
+            artifact javadocJar
+            pom.withXml {
+                asNode().children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+
+                    description 'custome description'
+                    scm {
+                        url "http://github.com/${auther}/${project.name}"
+                        connection "scm:git:http://github.com/${auther}/${project.name}.git"
+                        developerConnection "scm:git:git@github.com:${auther}/${project.name}.git"
+                    }
+                }
+                if(asNode().dependencies[0]){
+                    asNode().dependencies[0].dependency.each {
+                        it.scope[0].value = 'compile'
+                    }
+                }
+            }
+        }
+    }
+}
