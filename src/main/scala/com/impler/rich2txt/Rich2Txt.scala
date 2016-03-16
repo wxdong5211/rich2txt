@@ -6,8 +6,9 @@ import java.lang.Iterable
 import javax.imageio.ImageIO
 
 import org.apache.logging.log4j.{LogManager, Logger}
-import org.apache.pdfbox.cos.COSName
-import org.apache.pdfbox.pdfparser.PDFStreamParser
+import org.apache.pdfbox.contentstream.operator.Operator
+import org.apache.pdfbox.cos.{COSBase, COSObject, COSName}
+import org.apache.pdfbox.pdfparser.{PDFObjectStreamParser, PDFStreamParser}
 import org.apache.pdfbox.pdmodel._
 import org.apache.pdfbox.pdmodel.graphics.PDXObject
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
@@ -39,36 +40,52 @@ object Rich2Txt {
 
     val page: PDPage = document.getPage(1)
     println(page)
-    val resources: PDResources = page.getResources
-    val objectNames: Iterable[COSName] = resources.getXObjectNames
-    println(objectNames)
 
-    objectNames.zipWithIndex.foreach(x=>{
-      val xObject: PDXObject = resources.getXObject(x._1)
-      println(xObject)
-      xObject match {
-        case img: PDImageXObject => ImageIO.write(img.getImage,img.getSuffix, new File(pdf+"_2_"+x._2+"."+img.getSuffix))
-        case _ =>
+//    val stripper = new PDFTestStripper()
+//    println(stripper.getText(document))
+
+//    val resources: PDResources = page.getResources
+//    val objectNames: Iterable[COSName] = resources.getXObjectNames
+//    println(objectNames)
+//
+//    objectNames.zipWithIndex.foreach(x=>{
+//      val xObject: PDXObject = resources.getXObject(x._1)
+//      println(xObject)
+//      xObject match {
+//        case img: PDImageXObject => ImageIO.write(img.getImage,img.getSuffix, new File(pdf+"_2_"+x._2+"."+img.getSuffix))
+//        case _ =>
+//      }
+//    })
+
+    val parser = new PDFStreamParser(page)
+    parser.parse()
+    parser.getTokens.foreach(t=>{
+      println(t.getClass)
+      t match {
+        case obj: COSObject => println("obj = "+obj)
+        case base: COSBase => println("base = "+base)
+        case op: Operator => println("op = "+op)
+        case _ => println("any = "+t)
       }
     })
-
-//    val parser = new PDFStreamParser(page)
-//    parser.parse()
-//    parser.getTokens.foreach(t=>{
-//      println(t)
-//      println(t.getClass)
-//    })
 
 
 //    document.getPages.foreach(p=>{
 //      println(p)
 //    })
-//    val stripper = new PDFMarkedContentExtractor()
-//    println(stripper.getText(document))
   }
 
   private def text(document: PDDocument):Unit = {
     val stripper = new PDFTextStripper()
+//    stripper.setAddMoreFormatting(true)
+//    stripper.setArticleEnd("#####ArticleEnd")
+//    stripper.setArticleStart("#####setArticleStart")
+//    stripper.setPageEnd("#####PageEnd")
+//    stripper.setPageStart("#####PageStart")
+//    stripper.setParagraphEnd("#####ParagraphEnd")
+//    stripper.setParagraphStart("#####ParagraphStart")
+//    stripper.setShouldSeparateByBeads(true)
+//    stripper.setSortByPosition(true)
     println(stripper.getText(document))
   }
 
