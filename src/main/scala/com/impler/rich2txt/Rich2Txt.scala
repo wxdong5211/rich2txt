@@ -41,8 +41,10 @@ object Rich2Txt {
     val page: PDPage = document.getPage(1)
     println(page)
 
-//    val stripper = new PDFTestStripper()
-//    println(stripper.getText(document))
+    val stripper = new PDFTestStripper()
+    stripper.setStartPage(2)
+    stripper.setEndPage(2)
+    println(stripper.getText(document))
 
 //    val resources: PDResources = page.getResources
 //    val objectNames: Iterable[COSName] = resources.getXObjectNames
@@ -57,17 +59,17 @@ object Rich2Txt {
 //      }
 //    })
 
-    val parser = new PDFStreamParser(page)
-    parser.parse()
-    parser.getTokens.foreach(t=>{
-      println(t.getClass)
-      t match {
-        case obj: COSObject => println("obj = "+obj)
-        case base: COSBase => println("base = "+base)
-        case op: Operator => println("op = "+op)
-        case _ => println("any = "+t)
-      }
-    })
+//    val parser = new PDFStreamParser(page)
+//    parser.parse()
+//    parser.getTokens.foreach(t=>{
+//      println(t.getClass)
+//      t match {
+//        case obj: COSObject => println("obj = "+obj)
+//        case base: COSBase => println("base = "+base)
+//        case op: Operator => println("op = "+op)
+//        case _ => println("any = "+t)
+//      }
+//    })
 
 
 //    document.getPages.foreach(p=>{
