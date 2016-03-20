@@ -19,7 +19,7 @@ class PDFTestStripper extends PDFTextStripper{
   }
 
   override def writeString(text: String, textPositions: util.List[TextPosition]): Unit = {
-    println(s"text => $text , textPositions => ${textPositions.get(0).getFontSize}")
+    println(s"write => $text , textPositions => ${textPositions.get(0).getFontSize}")
     super.writeString(text, textPositions)
   }
 
