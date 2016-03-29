@@ -14,7 +14,9 @@ import scala.collection.JavaConversions._
   * PDFTestStripper
   */
 class PDFTestStripper extends PDFTextStripper{
+
   private val buff =  StringBuilder.newBuilder
+  private var currRule: OpRule = _
 
   //Operator Tf -> [COSName{FXF1}, COSInt{499}] title
   val testRule = new OpRule
@@ -36,7 +38,28 @@ class PDFTestStripper extends PDFTextStripper{
   testRuleGroup.suffix = "</H1>"
   testRuleGroup.symbol = "or"
   testRuleGroup.rules = List[OpRule](testRule,testRule2)
-  private val rules = List[OpRule](testRuleGroup)
+
+  //Operator Tf -> [COSName{FXF3}, COSInt{209}] content
+  val testRule3 = new OpRule
+  testRule3.op = "Tf"
+  testRule3.prev = "<DIV>"
+  testRule3.suffix = "</DIV>"
+  val testRule3Arg1 = new OpArgRule
+  testRule3Arg1.arg = "COSInt{209}"
+  testRule3Arg1.idx = 1
+  testRule3.args = List[OpArgRule](testRule3Arg1)
+
+  //Operator Tf -> [COSName{FXF3}, COSInt{300}] title lv2
+  val testRule4 = new OpRule
+  testRule4.op = "Tf"
+  testRule4.prev = "<H2>"
+  testRule4.suffix = "</H2>"
+  val testRule4Arg1 = new OpArgRule
+  testRule4Arg1.arg = "COSInt{300}"
+  testRule4Arg1.idx = 1
+  testRule4.args = List[OpArgRule](testRule4Arg1)
+
+  private val rules = List[OpRule](testRuleGroup,testRule3,testRule4)
 
   override def processTextPosition(text: TextPosition): Unit = {
     println(s"text => $text")
@@ -53,17 +76,18 @@ class PDFTestStripper extends PDFTextStripper{
     val name: String = operator.getName
     println(s"Operator $name -> $operands start")
 
-    val outRules = checkOutRules(rules,operator,operands)
-    outRules.foreach(r=>{
-      val flag = r match {
-        case group: RuleGroup => checkRuleGroup(group,operator,operands)
-        case rule: OpRule => checkOpRule(rule,operator,operands)
-        case _ => false
-      }
-      if(flag){
-        buff ++= r.prev
-      }
-    })
+    val outRule = checkOutRule(rules,operator,operands)
+    outRule match {
+      case Some(r) =>
+        if(currRule != r){
+          if(currRule != null){
+            buff ++= currRule.suffix
+          }
+          buff ++= r.prev
+          currRule = r
+        }
+      case None =>
+    }
     super.processOperator(operator, operands)
 //    rules.foreach(r=>{
 //      if(name.equals(r.op)){
@@ -79,15 +103,8 @@ class PDFTestStripper extends PDFTextStripper{
     text
   }
 
-  private def checkOutRules(rules: List[OpRule], operator: Operator, operands: util.List[COSBase]): List[OpRule] ={
-    var ret = List[OpRule]()
-    rules.foreach(r => {
-      if(checkRuleOrGroup(r,operator,operands)){
-        ret +:= r
-      }
-    })
-    ret
-  }
+  private def checkOutRule(rules: List[OpRule], operator: Operator, operands: util.List[COSBase]): Option[OpRule] =
+    rules.find(checkRuleOrGroup(_,operator,operands))
 
   private def checkRules(rules: List[OpRule], operator: Operator, operands: util.List[COSBase], andThem: Boolean = true): Boolean ={
     var ret = andThem
