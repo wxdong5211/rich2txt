@@ -41,7 +41,7 @@ object Rich2Txt {
     val page: PDPage = document.getPage(1)
     println(page)
 
-    val stripper = new PDFTestStripper()
+    val stripper = new PDFReportStripper()
 //    val stripper = new PDFFormatStripper()
     stripper.setStartPage(1)
     stripper.setEndPage(2)
