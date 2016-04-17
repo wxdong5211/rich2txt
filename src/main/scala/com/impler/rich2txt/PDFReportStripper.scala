@@ -31,6 +31,7 @@ class PDFReportStripper extends PDFTextStripper{
 
   private var opMap: Map[String,Int] = Map[String,Int]()
   private var lineHeightMap: Map[Float,Int] = Map[Float,Int]()
+  private var resourceMap: Map[String,Int] = Map[String,Int]()
 
   override def processTextPosition(text: TextPosition): Unit = {
     println(s"text => $text @ ${text.getX},${text.getY},${text.getWidthDirAdj},${text.getHeightDir}")
@@ -86,9 +87,12 @@ class PDFReportStripper extends PDFTextStripper{
     println(s"minX = $minX, maxX = $maxX, charNumber = $charNumber, lineNumber = $lineNumber, opNumber = $opNumber")
     println("OP MAP "+opMap.size)
     opMap.toSeq.sortBy(_._2).foreach(o => println(o._1+" = "+o._2+" "+f"${o._2*100/opNumber.toFloat}%.2f"+"%"))
-    val size = lineHeightMap.size
+    var size = lineHeightMap.size
     println("LineHeight MAP "+size)
     lineHeightMap.toSeq.sortBy(_._2).foreach(o => println(o._1+" = "+o._2+" "+f"${o._2*100/size.toFloat}%.2f"+"%"))
+    size = resourceMap.size
+    println("ResourceMap MAP "+size)
+    resourceMap.toSeq.sortBy(_._2).foreach(o => println(o._1+" = "+o._2+" "+f"${o._2*100/size.toFloat}%.2f"+"%"))
     text
   }
 
@@ -115,7 +119,14 @@ class PDFReportStripper extends PDFTextStripper{
     val objectNames: Iterable[COSName] = resources.getXObjectNames
     println(objectNames)
     objectNames.zipWithIndex.foreach(x=>{
+      val name: String = x._1.toString
+      if(resourceMap.contains(name)){
+        resourceMap += name -> (resourceMap(name)+1)
+      }else{
+        resourceMap += name -> 1
+      }
       val xObject: PDXObject = resources.getXObject(x._1)
+      println("page = "+page)
       xObject match {
         case img: PDImageXObject => printImageXObject(img)//ImageIO.write(img.getImage,img.getSuffix, new File(pdf+"_2_"+x._2+"."+img.getSuffix))
         case _ => println(xObject)
