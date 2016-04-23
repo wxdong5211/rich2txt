@@ -3,6 +3,7 @@ package com.impler.rich2txt
 import java.text.SimpleDateFormat
 import java.util
 
+import com.impler.rich2txt.model.{Report, OpReport}
 import org.apache.pdfbox.pdmodel.graphics.PDXObject
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject
 
@@ -29,7 +30,7 @@ class PDFReportStripper extends PDFTextStripper{
   private var lineNumber = 0
   private var opNumber = 0
 
-  private var opMap: Map[String,Int] = Map[String,Int]()
+  private var opMap: Map[String,OpReport] = Map[String,OpReport]()
   private var lineHeightMap: Map[Float,Int] = Map[Float,Int]()
   private var resourceMap: Map[String,Int] = Map[String,Int]()
 
@@ -65,9 +66,18 @@ class PDFReportStripper extends PDFTextStripper{
   override def processOperator(operator: Operator, operands: util.List[COSBase]): Unit = {
     val name: String = operator.getName
     if(opMap.contains(name)){
-      opMap += name -> (opMap(name)+1)
+      opMap(name).times += 1
+      val tag = opMap(name).paramMap.contains(operands)
+      if(tag){
+        opMap(name).paramMap += operands -> (opMap(name).paramMap(operands) + 1)
+      }else{
+        opMap(name).paramMap += operands -> 1
+      }
     }else{
-      opMap += name -> 1
+      val opReport = new OpReport
+      opReport.times = 1
+      opReport.paramMap = Map(operands -> 1)
+      opMap += name -> opReport
     }
     opNumber += 1
     println(s"Operator $name -> $operands start")
@@ -81,19 +91,33 @@ class PDFReportStripper extends PDFTextStripper{
   }
 
   override def getText(doc: PDDocument): String = {
-    val text: String = super.getText(doc)
-    println(s"buff = $buff")
+    super.getText(doc)
+    buff.toString()
+  }
+
+  def getReport(doc: PDDocument): Report ={
+    val text = getText(doc)
     printDocument(doc)
     println(s"minX = $minX, maxX = $maxX, charNumber = $charNumber, lineNumber = $lineNumber, opNumber = $opNumber")
     println("OP MAP "+opMap.size)
-    opMap.toSeq.sortBy(_._2).foreach(o => println(o._1+" = "+o._2+" "+f"${o._2*100/opNumber.toFloat}%.2f"+"%"))
+    opMap.toSeq.sortBy(_._2.times).foreach(o => println(o._1+" = "+o._2+" "+f"${o._2.times*100/opNumber.toFloat}%.2f"+"%"))
     var size = lineHeightMap.size
     println("LineHeight MAP "+size)
     lineHeightMap.toSeq.sortBy(_._2).foreach(o => println(o._1+" = "+o._2+" "+f"${o._2*100/size.toFloat}%.2f"+"%"))
     size = resourceMap.size
     println("ResourceMap MAP "+size)
     resourceMap.toSeq.sortBy(_._2).foreach(o => println(o._1+" = "+o._2+" "+f"${o._2*100/size.toFloat}%.2f"+"%"))
-    text
+    val report = new Report
+    report.text = text
+    report.minX = minX
+    report.maxX = maxX
+    report.charNumber = charNumber
+    report.lineNumber = lineNumber
+    report.opNumber = opNumber
+    report.opMap = opMap
+    report.lineHeightMap = lineHeightMap
+    report.resourceMap = resourceMap
+    report
   }
 
   private def printDocument(document: PDDocument):Unit={

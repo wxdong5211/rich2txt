@@ -2,6 +2,7 @@ package com.impler.rich2txt
 
 import java.io.File
 
+import com.impler.rich2txt.model.Report
 import org.apache.logging.log4j.{LogManager, Logger}
 import org.apache.pdfbox.pdmodel._
 import org.apache.pdfbox.text.PDFTextStripper
@@ -23,10 +24,14 @@ object Rich2Txt {
     println(page)
 
     val stripper = new PDFReportStripper()
-//    val stripper = new PDFFormatStripper()
     stripper.setStartPage(1)
     stripper.setEndPage(2)
-    println(stripper.getText(document))
+    val report = stripper.getReport(document)
+    println("report = "+report)
+    val stripper1 = new PDFFormatStripper()
+    stripper1.setStartPage(1)
+    stripper1.setEndPage(2)
+    println("format = "+stripper1.format(document, report))
 
 //    val parser = new PDFStreamParser(page)
 //    parser.parse()

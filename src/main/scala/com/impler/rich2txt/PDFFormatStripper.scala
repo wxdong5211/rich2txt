@@ -2,7 +2,7 @@ package com.impler.rich2txt
 
 import java.util
 
-import com.impler.rich2txt.model.{RuleGroup, OpArgRule, OpRule}
+import com.impler.rich2txt.model.{Report, RuleGroup, OpArgRule, OpRule}
 import org.apache.pdfbox.contentstream.operator.Operator
 import org.apache.pdfbox.cos.COSBase
 import org.apache.pdfbox.pdmodel.PDDocument
@@ -19,7 +19,9 @@ class PDFFormatStripper extends PDFTextStripper{
   private var currRule: OpRule = _
 
   private val defaultLineSep = "\n"
-  private var currX = -1f
+  private var isLineBegin = true
+  private var minX = -1f
+  private var maxX = -1f
   private var currY = -1f
 
   //Operator Tf -> [COSName{FXF1}, COSInt{499}] title
@@ -66,9 +68,19 @@ class PDFFormatStripper extends PDFTextStripper{
   private val rules = List[OpRule](testRuleGroup,testRule3,testRule4)
 
   override def processTextPosition(text: TextPosition): Unit = {
-    println(s"text => $text @ ${text.getX},${text.getY}")
+//    println(s"text => $text @ ${text.getX},${text.getY}")
     if(currY != -1 && currY != text.getY){
+      if(text.getX < maxX){
+        buff ++= "</P>"
+      }//minX = 8.51955, maxX = 449.2795 //TODO need by page scope
       buff ++= defaultLineSep
+      isLineBegin = true
+    }
+    if(isLineBegin){
+      if(text.getX > minX){
+        buff ++= "<P>"
+      }
+      isLineBegin = false
     }
     currY = text.getY
     buff ++= text.getUnicode
@@ -82,7 +94,7 @@ class PDFFormatStripper extends PDFTextStripper{
 
   override def processOperator(operator: Operator, operands: util.List[COSBase]): Unit = {
     val name: String = operator.getName
-    println(s"Operator $name -> $operands start")
+//    println(s"Operator $name -> $operands start")
 
     val outRule = checkOutRule(rules,operator,operands)
     outRule match {
@@ -102,13 +114,18 @@ class PDFFormatStripper extends PDFTextStripper{
     //        buff ++= r.suffix
     //      }
     //    })
-    println(s"Operator $name -> $operands end")
+//    println(s"Operator $name -> $operands end")
   }
 
   override def getText(doc: PDDocument): String = {
-    val text: String = super.getText(doc)
-    println(s"buff = $buff")
-    text
+    super.getText(doc)
+    buff.toString()
+  }
+
+  def format(doc: PDDocument, report: Report): String ={
+    minX = report.minX
+    maxX = report.maxX
+    getText(doc)
   }
 
   private def checkOutRule(rules: List[OpRule], operator: Operator, operands: util.List[COSBase]): Option[OpRule] =
